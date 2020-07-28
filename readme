@@ -1,34 +1,34 @@
-Для решения задачи в качестве основы была выбрана задача о редакционном расстоянии (Расстояние Левенштайна).
-Входные данные в файле Input.txt, выходные формируются в output.txt
-Если указать в командной строке:
+п»їР”Р»СЏ СЂРµС€РµРЅРёСЏ Р·Р°РґР°С‡Рё РІ РєР°С‡РµСЃС‚РІРµ РѕСЃРЅРѕРІС‹ Р±С‹Р»Р° РІС‹Р±СЂР°РЅР° Р·Р°РґР°С‡Р° Рѕ СЂРµРґР°РєС†РёРѕРЅРЅРѕРј СЂР°СЃСЃС‚РѕСЏРЅРёРё (Р Р°СЃСЃС‚РѕСЏРЅРёРµ Р›РµРІРµРЅС€С‚Р°Р№РЅР°).
+Р’С…РѕРґРЅС‹Рµ РґР°РЅРЅС‹Рµ РІ С„Р°Р№Р»Рµ Input.txt, РІС‹С…РѕРґРЅС‹Рµ С„РѕСЂРјРёСЂСѓСЋС‚СЃСЏ РІ output.txt
+Р•СЃР»Рё СѓРєР°Р·Р°С‚СЊ РІ РєРѕРјР°РЅРґРЅРѕР№ СЃС‚СЂРѕРєРµ:
                          spell_checker.exe Input.big Output.big
-то программа будет работать с входным файлов Input.big, и выходным файлом - Output.big
+С‚Рѕ РїСЂРѕРіСЂР°РјРјР° Р±СѓРґРµС‚ СЂР°Р±РѕС‚Р°С‚СЊ СЃ РІС…РѕРґРЅС‹Рј С„Р°Р№Р»РѕРІ Input.big, Рё РІС‹С…РѕРґРЅС‹Рј С„Р°Р№Р»РѕРј - Output.big
 
 Spell checker 
 Your goal is to implement a spelling checker. You should correct words by finding words in the 
 dictionary that are no more than two edits away from the input. 
 Here, an edit is either: 
-• Inserting a single letter, or 
-• Deleting a single letter 
+вЂў Inserting a single letter, or 
+вЂў Deleting a single letter 
 with the restriction that 
-• If the edits are both insertions or both deletions, they may not be of adjacent 
+вЂў If the edits are both insertions or both deletions, they may not be of adjacent 
 characters. 
 The input will consist of a dictionary followed by a sequence of possibly misspelt words. Both 
 contain words (strings of letters) of up to 50 characters. The dictionary, in free format, is 
-followed by a line containing just the string „===?. After this, there will be zero or more text lines 
-containing words followed again by a line containing the string „===?. The input is case-
+followed by a line containing just the string вЂћ===?. After this, there will be zero or more text lines 
+containing words followed again by a line containing the string вЂћ===?. The input is case-
 insensitive; print corrections from the dictionary in the case they appear in the dictionary and 
 unchanged words from the text lines in their original case as well. 
 As output, you should print the text lines with whitespace intact, with the following changes on 
 each word, W: 
-• If W is in the dictionary, print it as is. 
-• Otherwise, if W is not in the dictionary, 
-– If no corrections can be found, print “{W?}”. 
-– Ignore any corrections that require two edits if there is at least one that 
+вЂў If W is in the dictionary, print it as is. 
+вЂў Otherwise, if W is not in the dictionary, 
+вЂ“ If no corrections can be found, print вЂњ{W?}вЂќ. 
+вЂ“ Ignore any corrections that require two edits if there is at least one that 
 requires only one edit; then . . . 
-– If exactly one correction is left, print that word. 
-– If more than one possible correction is left, print the set of corrections as “{W1 
-W2 · · ·}”, in the order they appear in the dictionary. 
+вЂ“ If exactly one correction is left, print that word. 
+вЂ“ If more than one possible correction is left, print the set of corrections as вЂњ{W1 
+W2 В· В· В·}вЂќ, in the order they appear in the dictionary. 
 Don?t forget that dictionary and text size might be big enough to raise performance issues. 
 Example 
 Input 					 |Output 
