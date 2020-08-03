@@ -5,119 +5,157 @@ using System.Windows;
 using Microsoft.Win32;
 using System.Collections.Generic;
 
-
-namespace Two_Edits
+namespace TwoEdits
 {
+    public class WorkWithArgs
+    {
+
+        static bool IsArgsHere(string[] args)
+        {
+            if (args.Length != 0)
+                return true;
+            else
+                return false;
+        }
+
+        static bool IsArgsTwo(string[] args)
+        {
+            if ((args.Length == 2) & (IsArgsHere(args)))
+                return true;
+            else
+                return false;
+        }
+
+        static string CurrentDir()
+        {
+            return Directory.GetCurrentDirectory() + @"\";
+        }
+        public string InputFilename(string[] args)
+        {
+            const string defaultInputFileName = "Input.txt";
+            if (IsArgsHere(args))
+                return CurrentDir() + args[0];  
+            else
+                return CurrentDir() +  defaultInputFileName;
+        }
+
+        public string OutputFilename(string[] args)
+        {
+            const string defaultOutputFileName = "Output.txt";
+            if (IsArgsTwo(args))
+                return CurrentDir() + args[1];  
+            else    
+                return CurrentDir() + defaultOutputFileName;
+        }
+    }
+
+    class SpellCheker
+    {
+        public string inputFullFileName;
+        public string otputFullFileName;
+        public string inputDictWords = ""; //dictionary by a sequence of;
+        public string inputPMWords = ""; //Possible Misspelt Words;
+        public string countWordsIntoDictWords = ""; 
+        public string countWordsIntoPMWords = ""; 
+        public string countWordsIntoEachLines; //количество слов в каждой строке
+        public bool fileIsLoaded = false;
+        
+        SpellCheker(string[] args)
+        {
+            WorkWithArgs workWithArgs = new WorkWithArgs();
+            this.inputFullFileName = workWithArgs.InputFilename(args);
+            this.otputFullFileName = workWithArgs.OutputFilename(args);
+            ReadedSourceFile();
+        }
+
+        public void ReadedSourceFile()
+        {
+            if (File.Exists(inputFullFileName)) 
+            {
+                ReadingSourceFile();
+                fileIsLoaded = true;
+            }
+            else    
+                fileIsLoaded = false;
+        }
+
+        public string AddInputWord(string destanation, string newPMWord)
+        {
+
+            //inputPMWords
+            if (destanation.Length != 0)
+                if (destanation[destanation.Length-1] == ' ' )
+                    return destanation +  newPMWord;
+                else    
+                    return destanation + ' ' + newPMWord;
+            else
+                return destanation + newPMWord;
+        }
+        public bool IsNotSepparator(string match)
+        {
+            string sepparator = "===";
+            if (String.Compare(match.Trim() , sepparator) != 0)
+                return true;
+            else
+                return false;
+        }//may be add IsNotNull (The end of file) написано что бы вернуться позже к этому вопросу
+        
+        public string AddSourceLineToDestanation(string destanation, string line)
+        {
+            int countWordsInCurrentLine = 0;
+            foreach(string currentWord in line.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries))
+            {
+                countWordsInCurrentLine++;
+                destanation = AddInputWord(destanation, currentWord);
+            }
+            countWordsIntoEachLines = countWordsIntoEachLines + countWordsInCurrentLine.ToString();
+            return destanation;
+        }
+        public String ReadPartFile(StreamReader inputFile)
+        {
+            countWordsIntoEachLines = "";
+            String line;
+            String destanation ="";
+            while (IsNotSepparator(line = inputFile.ReadLine())) 
+                destanation = AddSourceLineToDestanation(destanation, line);
+            return destanation;
+        }
+        public void ReadInputFile(StreamReader inputFile)
+        {
+            inputDictWords = ReadPartFile(inputFile);
+            countWordsIntoDictWords =  countWordsIntoEachLines;
+            inputPMWords = ReadPartFile(inputFile);
+            countWordsIntoPMWords = countWordsIntoEachLines;
+        }
+        public void ReadingSourceFile()
+        {
+            try
+                {
+                using (StreamReader inputFile = new StreamReader(@inputFullFileName))
+                    {
+                        ReadInputFile(inputFile);
+                    }
+                }
+            catch (System.Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw;
+            }  
+        }
     
     class Program
     {
         static void Main(string[] args)
         {
-            string path = Directory.GetCurrentDirectory() + @"\";
-            String InputFileName;
-            String OutputFileName;
-                
-            if ((args.Length <= 2) & (args.Length != 0))
-            {
-                InputFileName = args[0];  //InputFileName =  Console.ReadLine();
-            }
-            else
-            {
-                InputFileName =  "Input.txt";
-            }
-            if ((args.Length == 2) & (args.Length != 0))
-            {
-                OutputFileName = args[1];  //InputFileName =  Console.ReadLine();
-            }
-            else
-            {
-                OutputFileName=  "Output.txt";
-            }
-                
-
-            String InputDictWords = ""; //dictionary by a sequence of;
-            String InputPMWords = ""; //Possible Misspelt Words;
-            String InputPMWords_cnt ="";
-            int current_word_print = 0;
-            if (File.Exists(@InputFileName))
-            {
-                try
+            SpellCheker spellCheker = new SpellCheker(args);
+            if  (spellCheker.fileIsLoaded)
                 {
-                    using (StreamReader InputFile = new StreamReader(@InputFileName))
-                    {
-                        bool PartOfIncText = false; //Part 1 is false; Part 2 is true
-                        string line;
-                        string sepparator = "===";
-                        while ((line = InputFile.ReadLine()) != null)
-                        {
-                            string[] array= line.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);  
-                            if (String.Compare(array[0], sepparator) == 0)
-                            {
-                                PartOfIncText = true;
-                            } 
-                            else
-                            {
-                                int cnt_words_line;
-                                cnt_words_line = 0;
-                                foreach(string x in array)
-                                {
-                                    cnt_words_line++;
-                                    if (PartOfIncText)
-                                    {
-                                        if (InputPMWords.Length != 0)
-                                        {   
-                                            if (InputPMWords[InputPMWords.Length-1] == ' ' )
-                                            {
-                                                InputPMWords = InputPMWords +  x;
-                                            }
-                                            else    
-                                            {
-                                                InputPMWords = InputPMWords + ' ' + x;
-                                            }
-                                        }    
-                                        else
-                                            {
-                                                InputPMWords = InputPMWords + x;
-                                            }
-                                        }
-                                    else
-                                    {
-                                        if (InputDictWords.Length != 0)
-                                        {   
-                                            if (InputDictWords[InputDictWords.Length-1] == ' ' )
-                                            {
-                                                InputDictWords = InputDictWords +  x;
-                                            }
-                                            else    
-                                            {
-                                                InputDictWords = InputDictWords + ' ' + x;
-                                            }
-                                        }    
-                                        else
-                                        {
-                                            InputDictWords = InputDictWords + x;
-                                        }
-                                    }
-                                }
-                                if (PartOfIncText)
-                                {
-                                    InputPMWords_cnt = InputPMWords_cnt + cnt_words_line.ToString();
-                                }
-                            }                                                
-                            Array.Clear(array,0,array.Length); 
-                        }
-                    }
-                }                
-                catch (System.Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                    throw;
-                }  
-                StreamWriter Outf = new StreamWriter(OutputFileName);//,false,Encoding.GetEncoding("UTF-8"));
-                string[] Arr_InputDictWords = InputDictWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
-                string[] Arr_InputPMWords = InputPMWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
+                StreamWriter Outf = new StreamWriter(spellCheker.otputFullFileName);
+                string[] Arr_InputDictWords = spellCheker.inputDictWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
+                string[] Arr_InputPMWords = spellCheker.inputPMWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
                 int srt_compare;
                 int compare_found;
+                int current_word_print = 0;
                 foreach (string S1 in Arr_InputPMWords)
                 {
                     compare_found = 0;
@@ -398,9 +436,9 @@ namespace Two_Edits
                 }
                 // forming results
                 current_word_print++;
-                if (Convert.ToInt32(InputPMWords_cnt[0])==current_word_print+47)
+                if (Convert.ToInt32(spellCheker.countWordsIntoPMWords[0])==current_word_print+47)
                 {
-                    InputPMWords_cnt =InputPMWords_cnt.Remove(0,1);
+                    spellCheker.countWordsIntoPMWords =spellCheker.countWordsIntoPMWords.Remove(0,1);
                     current_word_print=1;
                     Outf.WriteLine(); 
                 }
@@ -463,6 +501,7 @@ namespace Two_Edits
                     }
                 }
                 Outf.Close();
+            }
             }
         }
     }
