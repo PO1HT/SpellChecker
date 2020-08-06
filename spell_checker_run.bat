@@ -1,6 +1,6 @@
 echo off
 cls
-set gavSrc=spell_checker.cs
+set gavSrc=spell_checker.cs levenstain.cs
 set iModeComp=1
 set gavSubsystem=exe
 set gavPlatform=anycpu

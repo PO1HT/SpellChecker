@@ -4,6 +4,7 @@ using System.Text;
 using System.Windows;
 using Microsoft.Win32;
 using System.Collections.Generic;
+using Redaction;
 
 namespace TwoEdits
 {
@@ -49,18 +50,18 @@ namespace TwoEdits
         }
     }
 
-    class SpellCheker
+    class spellCheсker
     {
         public string inputFullFileName;
         public string otputFullFileName;
         public string inputDictWords = ""; //dictionary by a sequence of;
-        public string inputPMWords = ""; //Possible Misspelt Words;
+        public string inputPossibleMisspletWords = ""; //Possible Misspelt Words;
         public string countWordsIntoDictWords = ""; 
         public string countWordsIntoPMWords = ""; 
         public string countWordsIntoEachLines; //количество слов в каждой строке
         public bool fileIsLoaded = false;
         
-        SpellCheker(string[] args)
+        spellCheсker(string[] args)
         {
             WorkWithArgs workWithArgs = new WorkWithArgs();
             this.inputFullFileName = workWithArgs.InputFilename(args);
@@ -82,7 +83,7 @@ namespace TwoEdits
         public string AddInputWord(string destanation, string newPMWord)
         {
 
-            //inputPMWords
+            //inputPossibleMisspletWords
             if (destanation.Length != 0)
                 if (destanation[destanation.Length-1] == ' ' )
                     return destanation +  newPMWord;
@@ -94,7 +95,7 @@ namespace TwoEdits
         public bool IsNotSepparator(string match)
         {
             string sepparator = "===";
-            if (String.Compare(match.Trim() , sepparator) != 0)
+            if (String.Compare(match.Trim(), sepparator) != 0)
                 return true;
             else
                 return false;
@@ -117,14 +118,16 @@ namespace TwoEdits
             String line;
             String destanation ="";
             while (IsNotSepparator(line = inputFile.ReadLine())) 
+            {
                 destanation = AddSourceLineToDestanation(destanation, line);
+            }
             return destanation;
         }
         public void ReadInputFile(StreamReader inputFile)
         {
             inputDictWords = ReadPartFile(inputFile);
             countWordsIntoDictWords =  countWordsIntoEachLines;
-            inputPMWords = ReadPartFile(inputFile);
+            inputPossibleMisspletWords = ReadPartFile(inputFile);
             countWordsIntoPMWords = countWordsIntoEachLines;
         }
         public void ReadingSourceFile()
@@ -143,367 +146,143 @@ namespace TwoEdits
             }  
         }
     
+        public void WriteResults(string[] result_words)
+        {
+            const int offsetOfNumbericChar = 48;
+            StreamWriter Outf = new StreamWriter(otputFullFileName);
+            int curr_print_elem = 0;
+            int the_end = 0;
+            int[] arr_r = new int[countWordsIntoPMWords.Length];
+            int curr_elem_arr_r = 0;
+            //Console.WriteLine(countWordsIntoPMWords);
+            for (int i = 0;i < countWordsIntoPMWords.Length;i++)
+            {
+                //arr_r[i] = Convert.ToInt32(countWordsIntoPMWords[i]) - offsetOfNumbericChar;
+                the_end = the_end + Convert.ToInt16(countWordsIntoPMWords[i]) - offsetOfNumbericChar;
+                arr_r[i] = the_end;
+            }
+            //Console.WriteLine("{0} {1} {2}",arr_r[0],arr_r[1],arr_r[2]);
+            curr_elem_arr_r = 0;
+            while (curr_print_elem < the_end)
+            {
+                if (arr_r[curr_elem_arr_r] == curr_print_elem)
+                {
+                    curr_elem_arr_r++;
+            //        Console.WriteLine();
+                    Outf.WriteLine();
+                }
+            //    Console.Write("{0} ",result_words[curr_print_elem]);
+                Outf.Write("{0} ",result_words[curr_print_elem]);
+                curr_print_elem++;
+            }
+            
+                
+            
+            Outf.Close();
+        }
+    
+        
     class Program
     {
         static void Main(string[] args)
         {
-            SpellCheker spellCheker = new SpellCheker(args);
-            if  (spellCheker.fileIsLoaded)
-                {
-                StreamWriter Outf = new StreamWriter(spellCheker.otputFullFileName);
-                string[] Arr_InputDictWords = spellCheker.inputDictWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
-                string[] Arr_InputPMWords = spellCheker.inputPMWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
-                int srt_compare;
-                int compare_found;
+        try
+        {
+            spellCheсker spellCheсker = new spellCheсker(args);
+            if  (spellCheсker.fileIsLoaded)
+            {
+                string[] Arr_InputDictWords = spellCheсker.inputDictWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
+                string[] Arr_inputPossibleMisspletWords = spellCheсker.inputPossibleMisspletWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
+                string[] Arr_Result = new string[Arr_inputPossibleMisspletWords.Length];
+                int ind_arr_result = 0;
                 int current_word_print = 0;
-                foreach (string S1 in Arr_InputPMWords)
+                foreach (string possibleMisspletWord in Arr_inputPossibleMisspletWords)
                 {
-                    compare_found = 0;
+                    int srt_compare = 0;
+                    string result_words = "";
+                    int result_edits = -1;
                     srt_compare = 0;
-                    HashSet<string> result_words_2edits = new HashSet<string>();
-                    HashSet<string> result_words_1edits = new HashSet<string>();
-                    string result_words_0edit = "";
-                    foreach (string S2 in Arr_InputDictWords)
+                    foreach (string dictWord in Arr_InputDictWords)
                         {
-                        if (srt_compare == 1)
+                            if (srt_compare == 1)
                             {
                                 continue;
                             }
-                        if (String.Compare(S1,S2,true)==0) 
+                            if (String.Compare(possibleMisspletWord,dictWord,true)==0) 
                             {
                                 srt_compare = 1;
-                                compare_found = 1;
-                                result_words_0edit = S2;
+                                result_edits = 0;
+                                result_words = dictWord;
                             }
-                        if (((S1.Length - S1.Length)<=2) & ((S1.Length - S1.Length)>=-2)) //Create matrix T if S1[i] == S2[j] then T[i,j] = 0; if S1[i] <> S2[j] then T[i,j] = 1;
-                        { 
-                            int[,] T = new int[S1.Length+1, S2.Length+1];  // Three layer of pointers in order: layer 1 is LeftArrow, Layer 2 is UpArrow, Layer 3 is DiagonalLeftArrow
-                            for (int i = 0; i <= S1.Length-1; i++) // fill in all the elements of the array (1.. S1.length) and (1.. S2.length)
-                            {
-                                for (int j = 0; j <= S2.Length-1; j++)
-                                {
-                                if ((S1[i] == S2[j]) ^ ((S1[i]-32) == S2[j]) ^ (S1[i] == (S2[j]-32)))
-                                    {
-                                            T[i+1,j+1]=0;
-                                    }
-                                    else    
-                                    {
-                                            T[i+1,j+1]=1;
-                                    }
-                                }
-                            }
-                            //Create matrix for redactions graph                                        
-                            int[,,] D = new int[S1.Length+1, S2.Length+1,6];  // Three layer of pointers in order: layer 0 is LeftArrow, Layer 1 is UpArrow, Layer 2 is DiagonalLeftArrow
-                            for (int x = 0; x <= S1.Length;x++)    //fill the first row
-                            {
-                                D[x,0,0] = x;
-                            }
-                            for (int x = 0; x <= S2.Length;x++)    //and fill the first column
-                            {
-                                D[0,x,0] = x;
-                            }
-                            // to fill 0 - row and 0 column
-                            //D[i,0] = i
-                            //D[0,j] = j
-                            for (int i = 1; i <= S1.Length; i++)
-                            {
-                                D[i,0,0] = i;
-                                D[i,0,2] = 1;
-                            }   
-                            for (int j = 1; j <= S2.Length; j++)
-                            {
-                                D[0,j,0] = j;
-                                D[0,j,1] = 1;
-                            }
-                            for (int i = 1; i <= S1.Length; i++)
-                            {
-                                for (int j = 1; j <= S2.Length; j++)
-                                {
-                                    int expr1 = D[i,j-1,0]+1; //1 - step left
-                                    int expr2 = D[i-1,j,0]+1; //2 - step up
-                                    int expr3 = D[i-1,j-1,0]+T[i,j]; //DiagonalLeftArrow
-                                    int[] arrExpr =  new int[3];
-                                    arrExpr[0] = expr1;
-                                    arrExpr[1]= expr2;
-                                    arrExpr[2] = expr3;
-                                    Array.Sort(arrExpr);
-                                    D[i,j,0] = arrExpr[0];
-                                    if (arrExpr[0] == expr1)
-                                    {
-                                            D[i,j,1] = 1;
-                                    }
-                                    else    
-                                    {
-                                            D[i,j,1] = 0;
-                                    }    
-                                    if (arrExpr[0] == expr2)
-                                    {
-                                            D[i,j,2] = 1;
-                                    }
-                                    else    
-                                    {
-                                            D[i,j,2] = 0;
-                                    }    
-                                    if (arrExpr[0] == expr3)
-                                    {
-                                            D[i,j,3] = 1;
-                                    }
-                                    else    
-                                    {
-                                    D[i,j,3] = 0;
-                                    }    
-                                }    
-                            }
-                            string[] dest_matrix = new string[] 
-                            {
-                                "MATRIX ==-D==-",
-                                "  LEFT   ARROW",
-                                "    UP   ARROW",
-                                "DiagLU   ARROW",
-                                "   DEL  MATRIX",
-                                "VARIANT MATRIX"
-                            };
-                            int count_variant = 1;
-                            D[S1.Length,S2.Length,4] = 1;
-                            for (int i = S1.Length; i >= 0; i--)
-                            {
-                                for (int j = S2.Length; j >= 0; j--)
-                                {
-                                    if (D[i,j,4] != 1)
-                                    {
-                                            D[i,j,0] = 0;
-                                    }   
-                                    else
-                                    {
-                                        if (D[i,j,1] == 1)
-                                        {
-                                            D[i,j-1,4] = 1; 
-                                        }
-                                        if (D[i,j,2] == 1)
-                                        {
-                                            D[i-1,j,4] = 1;
-                                        }
-                                        if (D[i,j,3] == 1)
-                                        {
-                                            D[i-1,j-1,4] = 1;
-                                        }
-                                        D[i,j,5] = D[i,j,1] + D[i,j,2] + D[i,j,3];
-                                        if (D[i,j,5] > 1) 
-                                        {
-                                            count_variant = count_variant + D[i,j,5] - 1;
-                                        }
-                                    }    
-                                }
-                            }
-                            string[] S1_result = new string[count_variant];
-                            string[] S2_result  = new string[count_variant];
-                            int i1, i_last, s1_cur,  s2_cur;
-                            int j1, j_last;
-                            int cnt_ins;
-                            int cnt_del;
-                            int cnt_rep;
-                            int both_operation_adjacent_ins;
-                            int both_operation_adjacent_del;
-                            int both_operation_adjacent_skip;
-                              //      int both_operation_adjacent_skip;
-                        
-                            for (int k = 0; k < count_variant;k++) //sycle for 
-                            {
-                                i1 = S1.Length;
-                                j1 = S2.Length;
-                                s1_cur = S1.Length-1;
-                                s2_cur = S2.Length-1;
-                                S1_result[k]="";
-                                S2_result[k]="";
-                                i_last = 0;
-                                j_last = 0;
-                                cnt_ins = 0;
-                                cnt_del = 0;
-                                cnt_rep = 0;
-                                both_operation_adjacent_ins = 0;
-                                both_operation_adjacent_del = 0;
-                                both_operation_adjacent_skip = 0;
-                                string result_word;
-                                result_word = "";
-                                while ((i1 >= 0) & (j1 >= 0))
-                                {
-                                //  1 "  LEFT   ARROW", 2 "    UP   ARROW", 3 "DiagLU   ARROW", 4 "   DEL  MATRIX", 5 "VARIANT MATRIX"
-                                    if (D[i1,j1,5] > 1)
-                                    {
-                                        i_last = i1;
-                                        j_last = j1;
-                                    }
-                                    if (D[i1,j1,1] == 1) //Insertion    gorizont
-                                    {
-                                        S1_result[k] = "_" + S1_result[k]; 
-                                        S2_result[k] = S2[s2_cur]+S2_result[k]; 
-                                        
-                                        result_word = S2[s2_cur] + result_word;
-                                        both_operation_adjacent_ins++;
-                                        both_operation_adjacent_del = 0;
-                                        s2_cur--;
-                                        j1--;
-                                        cnt_ins++;
-                                    }
-                                else
-                                if (D[i1,j1,2] == 1) //Delition   vertical
-                                    {
-                                    S1_result[k] =  S1[s1_cur] + S1_result[k]; 
-                                    S2_result[k] = "_"+S2_result[k]; 
-                                    both_operation_adjacent_del++;
-                                    both_operation_adjacent_ins =0;
-                                    s1_cur--;
-                                    i1--;
-                                    cnt_del++;
-                                }
-                                else
-                                if (D[i1,j1,3] == 1) 
-                                {
-                                        if (T[i1,j1] == 1) //Replacement
-                                        {
-                                            S1_result[k] = S1[s1_cur] + S1_result[k]; 
-                                            S2_result[k] = S2[s2_cur]  + S2_result[k]; 
+                            int levinstainDistance = 2;
+                            if (((possibleMisspletWord.Length - possibleMisspletWord.Length)<=levinstainDistance) & ((possibleMisspletWord.Length - possibleMisspletWord.Length)>=-levinstainDistance)) 
+                            { 
+                                MethodLevenstain.possibleMisspletWord = possibleMisspletWord;
+                                MethodLevenstain.dictWord = dictWord;
+                                MethodLevenstain.isResolveFound = false;
+                                MethodLevenstain.constrainTwoRedactionAdjactive = MethodLevenstain.notAllowConstrainTwoRedactionAdjactive;
+                                MethodLevenstain.constrainMaxCountOfRedaction = 2;
+                                MethodLevenstain.printOnlyMinOfWithRedaction = !MethodLevenstain.PrintOnlyMinOfWithRedaction;
+                                MethodLevenstain.CompareTwoStrings();
 
-                                            result_word = S2[s2_cur] + result_word;
-                                            both_operation_adjacent_del =0;
-                                            both_operation_adjacent_ins =0;
-                                
-                                            s1_cur--;
-                                            s2_cur--;
-                                            j1--;
-                                            i1--;
-                                            cnt_rep++;
-                                            
-                                        }
-                                        else //Match
-                                        {
-                                            S1_result[k] = S1[s1_cur] + S1_result[k]; 
-                                            S2_result[k] = S2[s2_cur]  + S2_result[k]; 
-                                            result_word = S2[s2_cur] + result_word;
-                                            both_operation_adjacent_del =0;
-                                            both_operation_adjacent_ins =0;
-                                            s1_cur--;
-                                            s2_cur--;
-                                            j1--;
-                                            i1--;
-                                            
-                                        }
-                                }
-                                if ((both_operation_adjacent_del == 2) ^ (both_operation_adjacent_ins == 2)) //skip two adjactive operations
+                                if (MethodLevenstain.isResolveFound)    
                                 {
-                                    both_operation_adjacent_skip = 1;
-                                }
-                                if ((i1 == 0) & (j1 == 0))
+                                    if (result_edits == -1)
                                     {
-                                        i1=-1;
-                                        j1=-1;
-                                    }
-                            }
-                            if  ((((cnt_ins + cnt_del + cnt_rep *2) <=2) & ((cnt_ins + cnt_del + cnt_rep *2) !=0)) &(both_operation_adjacent_skip==0))
-                            {
-                                compare_found = 1;
-                                if ((cnt_ins + cnt_del + cnt_rep * 2) == 1)
-                                    {
-                                        result_words_1edits.Add(result_word);
-                                    }
-                                else
-                                    {
-                                        result_words_2edits.Add(result_word);
-                                    }
-                                
-                            }
-                           
-                            if ((i_last != 0) & (j_last != 0))
-                            {
-                                D[i_last,j_last,5] = D[i_last,j_last,5] - 1;
-                                if (D[i_last,j_last,1] == 1) //Insertion
-                                {
-                                    D[i_last,j_last,1] = 0;
-                                }
-                                else
-                                    if (D[i_last,j_last,2] == 1) //Delition
-                                    {
-                                        D[i_last,j_last,2] = 0;
+                                        result_edits = MethodLevenstain.minOfWithRedaction;
+                                        result_words = dictWord;
                                     }
                                     else
-                                    if (D[i_last,j_last,3] == 1) //Match or Replacement
-                                    {
-                                        D[i_last,j_last,3] = 0;
-                                    }
-                            }
+                                        if (result_edits > MethodLevenstain.minOfWithRedaction)
+                                        {
+                                            result_edits = MethodLevenstain.minOfWithRedaction;
+                                            result_words = dictWord;
+                                        }
+                                        else
+                                            if (result_edits == MethodLevenstain.minOfWithRedaction)
+                                            {
+                                                result_words = result_words + " " + dictWord;
+                                            }
+                                }        
+                            }   
                         }
+                        if (result_edits ==  -1)
+                            result_words = @"{"+possibleMisspletWord+"?}";
+                        if (result_words.IndexOf(" ") > 0)
+                            result_words = @"{"+result_words+"}";
+                        // forming results
+                        current_word_print++;
+                    //printing results    
+                    //    String repeatedString = new String('.', 10-possibleMisspletWord.Length);
+                    //    String repeatedString1 = new String('.', 50-possibleMisspletWord.Length-result_words.Length);
+                    //    Console.Write("PMWord: {1} {3} results: {0} {4} With words {2}",result_words,possibleMisspletWord,result_edits,repeatedString,repeatedString1);
+                    //    Console.WriteLine();
+                        Arr_Result[ind_arr_result] = result_words;
+                        ind_arr_result++;
                     }
-                }
-                // forming results
-                current_word_print++;
-                if (Convert.ToInt32(spellCheker.countWordsIntoPMWords[0])==current_word_print+47)
-                {
-                    spellCheker.countWordsIntoPMWords =spellCheker.countWordsIntoPMWords.Remove(0,1);
-                    current_word_print=1;
-                    Outf.WriteLine(); 
-                }
-                if (compare_found==0)   // Not founded in dict
-                    {
-                        string tmp = @"{"+S1+"?} ";
-                        Outf.Write("{0}",tmp);
-                    }
-                else
-                    {
-                        if (srt_compare == 0)
-                        {
-                            if (result_words_1edits.Count > 0)
-                            {
-                                if (result_words_1edits.Count == 1)
-                                {
-                                    foreach (string str_ppp_1 in result_words_1edits)
-                                    {
-                                        string for_print = str_ppp_1 + " ";
-                                        Outf.Write("{0}", for_print);
-                                    }
-                                }
-                                else
-                                {
-                                    string tmp_pp_1 = @"{";
-                                    foreach (string str_p_1 in result_words_1edits)
-                                    {
-                                        tmp_pp_1 = tmp_pp_1 + str_p_1 + " ";
-                                    }
-                                    tmp_pp_1 = tmp_pp_1.Remove(tmp_pp_1.Length - 1, 1) + "} ";
-                                    Outf.Write("{0}", tmp_pp_1);
-                                }
-                            }
-                            else
-                            {
-                                if (result_words_2edits.Count == 1)
-                                {
-                                    foreach (string str_ppp in result_words_2edits)
-                                    {
-                                        string for_print = str_ppp + " ";
-                                        Outf.Write("{0}", for_print);
-                                    }
-                                }
-                                else
-                                {
-                                    string tmp_pp = @"{";
-                                    foreach (string str_p in result_words_2edits)
-                                    {
-                                        tmp_pp = tmp_pp + str_p + " ";
-                                    }
-                                    tmp_pp = tmp_pp.Remove(tmp_pp.Length - 1, 1) + "} ";
-                                    Outf.Write("{0}", tmp_pp);
-                                }
-                            }
-                         }
-                        else
-                        {
-                            Outf.Write("{0}", result_words_0edit + " ");
-                        }
-                    }
-                }
-                Outf.Close();
-            }
+
+                    //printing results    
+                    //    for(int i = 0; i<Arr_inputPossibleMisspletWords.Length;i++)
+                    //    {
+                    //        String repeatedString = new String('.', 10-Arr_inputPossibleMisspletWords[i].Length);
+                    //        Console.WriteLine("Input: {0} {2} Output: {1}",Arr_inputPossibleMisspletWords[i],Arr_Result[i],repeatedString);
+                    //    }
+                spellCheсker.WriteResults(Arr_Result);
+
             }
         }
+        catch (Exception ex)
+            {
+                Console.WriteLine("Исключение: {0}",ex.Message);
+                Console.WriteLine("Метод: {0}",ex.TargetSite);
+                Console.WriteLine("Трассировка стека: {0}",ex.StackTrace);
+            }
+    }
+    }    
     }
 }
 
+
+
+
+                    
