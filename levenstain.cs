@@ -1,8 +1,4 @@
 using System;
-using System.IO;
-using System.Text;
-using System.Windows;
-using Microsoft.Win32;
 using System.Collections.Generic;
 
 namespace Redaction
@@ -24,9 +20,6 @@ namespace Redaction
         public static int levenstaneDistance;  
         public static bool printOnlyMinOfWithRedaction = !PrintOnlyMinOfWithRedaction;
         public static bool isResolveFound = !true;
-        
-        
-        
         public static void CompareTwoStrings()
         {
             if (String.Compare(possibleMisspletWord,dictWord,true) == 0)  
@@ -333,7 +326,6 @@ namespace Redaction
             int row__ = possibleMisspletWord.Length;
             int column__ = dictWord.Length;
             int countOfRedaction = 0;
-            int count_variants = 0;
             bool resolveFounded = true;
             int  lenOfRedaction = 0;
             while (isLastForkFound)
@@ -469,7 +461,6 @@ namespace Redaction
                 Console.WriteLine("countOfVariants {0}",countOfVariants);
                 //Count of found minimal Levinstain distance
                 Console.WriteLine("minOfWithRedaction {0}",MethodLevenstain.minOfWithRedaction);
-                
             }
             catch (Exception ex)
             {
