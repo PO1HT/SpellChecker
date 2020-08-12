@@ -9,69 +9,142 @@ namespace Redaction
         public const bool notAllowConstrainTwoRedactionAdjactive = true;
         public const bool PrintOnlyMinOfWithRedaction = true;
         public static int[,,] editorialDistance_;
-        public static bool isTwoWordsEqual;
         public static string possibleMisspletWord;
         public static string dictWord;
         public static bool constrainTwoRedactionAdjactive = !notAllowConstrainTwoRedactionAdjactive;
         public static int constrainMaxCountOfRedaction = notInstalledConstrainMaxCountOfRedaction;
-        public static HashSet<int> variantsLengthOfRedactionDistance;
         public static int counsOfEditorOrderTranslation;
         public static int minOfWithRedaction;  
         public static int levenstaneDistance;  
         public static bool printOnlyMinOfWithRedaction = !PrintOnlyMinOfWithRedaction;
         public static bool isResolveFound = !true;
+        public static bool caseSensitivity = true;
+
+        public static void SetCaseSensitivity(bool flag)
+        {
+            caseSensitivity = flag;
+        }
+        
+        public static bool isTwoWordsEqual 
+        {
+            get 
+            {
+                if (String.Compare(possibleMisspletWord,dictWord,caseSensitivity) == 0)  
+                    return  true;
+                else
+                    return  false;
+            }
+            set 
+            {
+
+            }
+        }
+                
         public static void CompareTwoStrings()
         {
-            if (String.Compare(possibleMisspletWord,dictWord,true) == 0)  
-                isTwoWordsEqual = true;
-            else
+            if (!isTwoWordsEqual)
+            {
+                CalculateMatrix();
+                CountRedactions();
+                PrintOfVariandWords();
+            }
+        }
+
+        enum Layer : int
+            {
+                EditorialDistance = 0,
+                ArrowLeft = 1,
+                ArrowUp = 2,
+                ArrowDiagonalLeft = 3,
+            }
+            
+        const int equalsMinValueStep = 1;
+
+        enum Arrow : int
+        {
+            Up = equalsMinValueStep,
+            Left = equalsMinValueStep,
+            DiagonalLeft = equalsMinValueStep,
+        }
+        enum First : int
+        {
+            Column = 0,
+            Row = 0
+        }
+
+        public static void MatrixInit()
+        {
+            int rowFirst = (int)First.Row;
+            int columnFirst = (int)First.Column;
+            
+            editorialDistance_ = new int[possibleMisspletWord.Length+1, dictWord.Length+1,4];              
+            
+            editorialDistance_[rowFirst,columnFirst,(int)Layer.EditorialDistance] = 0;
+            editorialDistance_[rowFirst,columnFirst,(int)Layer.ArrowUp] = 0;
+            editorialDistance_[rowFirst,columnFirst,(int)Layer.ArrowLeft] = 0;
+            editorialDistance_[rowFirst,columnFirst,(int)Layer.ArrowDiagonalLeft] = 0;
+            
+            for (int i = 1; (i <= Math.Max(editorialDistance_.GetLength(0),editorialDistance_.GetLength(1))-1);i++)   
+            {
+                if (i <= (editorialDistance_.GetLength(0)-1))
                 {
-                    isTwoWordsEqual = false;
-                    CalculateMatrix();
-                    CountRedactions();
-                    PrintOfVariandWords();
+                    rowFirst = i;
+                    editorialDistance_[rowFirst,(int)First.Column,(int)Layer.EditorialDistance] = rowFirst;
+                    editorialDistance_[rowFirst,(int)First.Column,(int)Layer.ArrowUp] = (int)Arrow.Up; 
                 }
+                if (i <= (editorialDistance_.GetLength(1)-1))
+                {
+                    columnFirst = i;
+                    editorialDistance_[(int)First.Row,columnFirst,(int)Layer.EditorialDistance] = columnFirst;
+                    editorialDistance_[(int)First.Row,columnFirst,(int)Layer.ArrowLeft] = (int)Arrow.Left;
+                }    
+            }   
+        }
+
+        public static int minOfTreeValues(int arrowLeftInsertion,int arrowUpDelition, int arrowDiagonalLeftReplacememtOrMatch)
+        {
+            return Math.Min(Math.Min(arrowLeftInsertion,arrowUpDelition),arrowDiagonalLeftReplacememtOrMatch);
+        }
+        
+        public static void FillMainLayerOfMatrix(int row, int column)
+        {
+                    editorialDistance_[row,column,(int)Layer.EditorialDistance] = minOfTreeValues(
+                        
+                        editorialDistance_[row,column-1,(int)Layer.EditorialDistance]+1,
+                        editorialDistance_[row-1,column,(int)Layer.EditorialDistance]+1,
+                        editorialDistance_[row-1,column-1,(int)Layer.EditorialDistance]+
+                                                (
+                                                    (
+                                                        (possibleMisspletWord[row-1] == dictWord[column-1]) ^ 
+                                                        ((possibleMisspletWord[row-1]-32) == dictWord[column-1]) ^ 
+                                                        (possibleMisspletWord[row-1] == (dictWord[column-1]-32))
+                                                    )
+                                                        ?0:1
+                                                )
+                        );
+        }
+        
+        public static void FillMatrixDirectionsOfMinimalWays(int row, int column)
+        {
+            int arrowLeftInsertion = editorialDistance_[row,column-1,(int)Layer.EditorialDistance]+1; 
+            int arrowUpDelition = editorialDistance_[row-1,column,(int)Layer.EditorialDistance]+1; 
+            int tCompareSymbolsOfCureentPosition = (((possibleMisspletWord[row-1] == dictWord[column-1]) ^ ((possibleMisspletWord[row-1]-32) == dictWord[column-1]) ^ (possibleMisspletWord[row-1] == (dictWord[column-1]-32)))?0:1);
+            int arrowDiagonalLeftReplacememtOrMatch = editorialDistance_[row-1,column-1,(int)Layer.EditorialDistance]+tCompareSymbolsOfCureentPosition; 
+            int[] arrows = new int[4] {editorialDistance_[row,column,(int)Layer.EditorialDistance], arrowLeftInsertion,arrowUpDelition,arrowDiagonalLeftReplacememtOrMatch};
+            for (int directionLayer = 1; directionLayer <= (int)Layer.ArrowDiagonalLeft; directionLayer++) 
+                if (arrows[directionLayer] == editorialDistance_[row,column,(int)Layer.EditorialDistance])
+                    editorialDistance_[row,column,directionLayer] = equalsMinValueStep;
         }
 
         public static void CalculateMatrix()
         {
-            editorialDistance_ = new int[possibleMisspletWord.Length+1, dictWord.Length+1,4];              
-            const int LayerEditorialDistance = 0;
-            const int LayerArrowLeft = 1;
-            const int LayerArrowUp = 2;
-            const int LayerArrowDiagonalLeft = 3;
-            const int firstColumn= 0;
-            const int firstRow =  0;
-            const int arrowUp = 1;
-            const int arrowLeft = 1;
-                
-            for (int rowFirst = 1; rowFirst <= possibleMisspletWord.Length;rowFirst++)   
-            {
-                editorialDistance_[rowFirst,firstColumn,LayerEditorialDistance] = rowFirst;
-                editorialDistance_[rowFirst,firstColumn,LayerArrowUp] = arrowUp; 
-            }
-            for (int columnFirst = 1; columnFirst <= dictWord.Length;columnFirst++)    
-            {
-                editorialDistance_[firstRow,columnFirst,LayerEditorialDistance] = columnFirst;
-                editorialDistance_[firstRow,columnFirst,LayerArrowLeft] = arrowLeft;
-            }
+            MatrixInit();
             for (int row=1;row <= possibleMisspletWord.Length;row++)
-            {
                 for (int column = 1;column <= dictWord.Length;column++)
-                {
-                    int arrowLeftInsertion = editorialDistance_[row,column-1,LayerEditorialDistance]+1; 
-                    int arrowUpDelition = editorialDistance_[row-1,column,LayerEditorialDistance]+1; 
-                    //!!!!!!! too long strng
-                    int arrowDiagonalLeftReplacememtOrMatch = editorialDistance_[row-1,column-1,LayerEditorialDistance]+(((possibleMisspletWord[row-1] == dictWord[column-1]) ^ ((possibleMisspletWord[row-1]-32) == dictWord[column-1]) ^ (possibleMisspletWord[row-1] == (dictWord[column-1]-32)))?0:1); 
-                    int recurrenceRatioOfEditorialDistance = Math.Min(Math.Min(arrowLeftInsertion,arrowUpDelition),arrowDiagonalLeftReplacememtOrMatch);
-                    editorialDistance_[row,column,LayerEditorialDistance] = recurrenceRatioOfEditorialDistance;
-                    int[] arrows = new int[4] {recurrenceRatioOfEditorialDistance,arrowLeftInsertion, arrowUpDelition, arrowDiagonalLeftReplacememtOrMatch};
-                    for (int directionLayer = 1; directionLayer <= LayerArrowDiagonalLeft; directionLayer++) 
-                        if (arrows[directionLayer] == recurrenceRatioOfEditorialDistance)
-                            editorialDistance_[row,column,directionLayer] = 1;
-                }    
-            }
-            
+                    {
+                        FillMainLayerOfMatrix(row, column);
+                        FillMatrixDirectionsOfMinimalWays(row,column);
+                    }
         }
         
     
@@ -180,7 +253,8 @@ namespace Redaction
                             lenOfRedaction++;
                         }
                         else
-                            if ((row__ != 0) & (column__ != 0))   // !!!!!!!!!!!!!!!!вот это мне совсем не нравится!!!!!!!!!!!
+#warning  this block need changes;
+                            if ((row__ != 0) & (column__ != 0))  
                             {
                                 if (direction_ == 3) 
                                 {
@@ -210,15 +284,13 @@ namespace Redaction
                 column__ = dictWord.Length;
                 if (count_variants == 1)
                 {
-                     minOfWithRedaction  = countOfRedaction;//lenOfRedaction;  
+                     minOfWithRedaction  = countOfRedaction;
                 }
                 else
                 {
-                    if (minOfWithRedaction > countOfRedaction)//lenOfRedaction)
-                        minOfWithRedaction = countOfRedaction;//lenOfRedaction;
+                    if (minOfWithRedaction > countOfRedaction)
+                        minOfWithRedaction = countOfRedaction;
                 }
-
-                
             }
             counsOfEditorOrderTranslation = count_variants;
         }
@@ -276,11 +348,11 @@ namespace Redaction
                             row__--;
                         }
                         else
-                            if ((row__ != 0) & (column__ != 0))   // !!!!!!!!!!!!!!!!вот это мне совсем не нравится!!!!!!!!!!!
+                            if ((row__ != 0) & (column__ != 0))   
                             {
                                 if (direction_ == 3) 
                                 {
-                                    if (possibleMisspletWord[row__-1] == dictWord[column__-1]) //Match
+                                    if (possibleMisspletWord[row__-1] == dictWord[column__-1]) 
                                     {
                                         
                                     }
@@ -374,7 +446,8 @@ namespace Redaction
                         countOfRedaction++;
                         lenOfRedaction++;
                     }
-                    if ((row__ != 0) & (column__ != 0))   // !!!!!!!!!!!!!!!!вот это мне совсем не нравится!!!!!!!!!!!
+#warning  this block need changes;
+                    if ((row__ != 0) & (column__ != 0))   
                     {
                         if (direction_ == 3) 
                         {

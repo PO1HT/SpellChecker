@@ -12,14 +12,18 @@ namespace SpellCheckerIO
     {
         public string inputFullFileName;
         public string otputFullFileName;
-        public string inputDictWords = ""; //dictionary by a sequence of;
+        public string inputDictWords = "";
         public string inputPossibleMisspletWords = ""; //Possible Misspelt Words;
         public string countWordsIntoDictWords = ""; 
         public string countWordsIntoPMWords = ""; 
-        public string countWordsIntoEachLines; //количество слов в каждой строке
+        public string countWordsIntoEachLines;
         public bool fileIsLoaded = false;
-
         public bool fileOpenAfterWrite = false;
+
+        public void SetFileOpenAfterWrite(bool flag)
+        {
+            fileOpenAfterWrite = flag;
+        }
         
         public SpellCheсker(string[] args)
         {
@@ -32,26 +36,43 @@ namespace SpellCheckerIO
         public void ReadedSourceFile()
         {
             if (File.Exists(inputFullFileName)) 
-            {
                 ReadingSourceFile();
-                fileIsLoaded = true;
-            }
+            else
+                throw new Exception("Input File is does't exist. Please check and fix the filename and try again! See soon");
+        }
+
+        public bool IsNotZeroLengthDestanationString(string destanation)
+        {
+            if (destanation.Length != 0)
+                return true;
+            else   
+                return false;
+        }
+
+        public bool IsLastSymbolSpase(string destanation)
+        {
+            if (destanation[destanation.Length-1] == ' ')
+                return true;
+            else   
+                return false;
+        }
+
+        public string AddDestanashionWordWithoutDobleTrim(string destanation, string newPMWord)
+        {
+            if (IsLastSymbolSpase(destanation))
+                return destanation +  newPMWord;
             else    
-                fileIsLoaded = false;
+                return destanation + ' ' + newPMWord;
         }
 
         public string AddInputWord(string destanation, string newPMWord)
         {
-
-            //inputPossibleMisspletWords
-            if (destanation.Length != 0)
-                if (destanation[destanation.Length-1] == ' ' )
-                    return destanation +  newPMWord;
-                else    
-                    return destanation + ' ' + newPMWord;
+            if (IsNotZeroLengthDestanationString(destanation))
+                return AddDestanashionWordWithoutDobleTrim(destanation, newPMWord);
             else
-                return destanation + newPMWord;
+                return newPMWord;
         }
+        
         public bool IsNotSepparator(string match)
         {
             string sepparator = "===";
@@ -59,30 +80,50 @@ namespace SpellCheckerIO
                 return true;
             else
                 return false;
-        }//may be add IsNotNull (The end of file) написано что бы вернуться позже к этому вопросу
+        }
         
-        public string AddSourceLineToDestanation(string destanation, string line)
+        public void AddCountWordsIntoCurrentLine(string[] words)
         {
-            int countWordsInCurrentLine = 0;
-            foreach(string currentWord in line.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries))
-            {
-                countWordsInCurrentLine++;
+            countWordsIntoEachLines = countWordsIntoEachLines + words.Length.ToString();
+        }
+
+        public string AddWordsIntoDestanation(string destanation, string[] words)
+        {
+            foreach(string currentWord in words)
                 destanation = AddInputWord(destanation, currentWord);
-            }
-            countWordsIntoEachLines = countWordsIntoEachLines + countWordsInCurrentLine.ToString();
             return destanation;
         }
-        public String ReadPartFile(StreamReader inputFile)
+
+        public string AddSourceLineToDestanation(string destanation, string line)
+        {
+            string[] words =  line.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
+            AddCountWordsIntoCurrentLine(words);
+            return AddWordsIntoDestanation(destanation, words);
+        }
+        
+        public void SetNothingInCountWordsIntoEachLines()
         {
             countWordsIntoEachLines = "";
+        } 
+            
+        public bool IsNotEOFTheEndOfFile(StreamReader inputFile)
+        {
+            const bool notEndOfFile = false;
+            return (inputFile.EndOfStream == notEndOfFile);
+        }
+
+        public String ReadPartFile(StreamReader inputFile)
+        {
+            SetNothingInCountWordsIntoEachLines();
+            String destanation = "";
             String line;
-            String destanation ="";
-            while (IsNotSepparator(line = inputFile.ReadLine())) 
+            while ((IsNotEOFTheEndOfFile(inputFile)) && (IsNotSepparator(line = inputFile.ReadLine())))
             {
                 destanation = AddSourceLineToDestanation(destanation, line);
             }
             return destanation;
         }
+        
         public void ReadInputFile(StreamReader inputFile)
         {
             inputDictWords = ReadPartFile(inputFile);
@@ -90,6 +131,17 @@ namespace SpellCheckerIO
             inputPossibleMisspletWords = ReadPartFile(inputFile);
             countWordsIntoPMWords = countWordsIntoEachLines;
         }
+
+        public void SetFileIsLoadedSuccess()
+        {
+            fileIsLoaded = true;
+        }
+
+        public void SetFileIsLoadedFail()
+        {
+            fileIsLoaded = false;
+        }
+
         public void ReadingSourceFile()
         {
             try
@@ -98,54 +150,65 @@ namespace SpellCheckerIO
                     {
                         ReadInputFile(inputFile);
                     }
+                SetFileIsLoadedSuccess();
                 }
             catch (System.Exception e)
             {
                 Console.WriteLine(e.Message);
-                throw;
+                SetFileIsLoadedFail();
             }  
+        }
+
+        public int[] EachLineCountOfWordsToArray(string[] result_words)
+        {
+            const int offsetOfNumbericChar = 48;
+            int[] arr_r = new int[countWordsIntoPMWords.Length];
+            int prev = 0;
+            for (int i = 0;i < countWordsIntoPMWords.Length;i++)
+            {
+                arr_r[i] = prev + Convert.ToInt16(countWordsIntoPMWords[i]) - offsetOfNumbericChar;
+                prev = arr_r[i];
+            }
+            return arr_r; 
+        }
+
+        public int TotalWordCount(int[] arr_r)
+        {
+            return arr_r[arr_r.Length-1];
+        }
+
+        public bool IncIfTheEndOfLine(int numberOfCurrentPrintWord, int numberOfTheEndWord)
+        {
+            if (numberOfCurrentPrintWord == numberOfTheEndWord)
+                return true;
+            return false;
+        }
+
+        public string ResultIntoString(string[] result_words)
+        {
+            int[] arr_r = EachLineCountOfWordsToArray(result_words);
+            string result = "";
+            for (int i = 0;i<arr_r.Length;i++)
+            {
+                for (int j = ((i==0)?0:arr_r[i-1]);j<arr_r[i];j++)
+                    result = result + result_words[j] + " ";
+                result = result + "\u000D";
+            }
+            return result;
         }
     
         public void WriteResults(string[] result_words)
         {
-            const int offsetOfNumbericChar = 48;
-            StreamWriter Outf = new StreamWriter(otputFullFileName);
-            int curr_print_elem = 0;
-            int the_end = 0;
-            int[] arr_r = new int[countWordsIntoPMWords.Length];
-            int curr_elem_arr_r = 0;
-            //Console.WriteLine(countWordsIntoPMWords);
-            for (int i = 0;i < countWordsIntoPMWords.Length;i++)
+            using (StreamWriter Outf = new StreamWriter(otputFullFileName))
             {
-                //arr_r[i] = Convert.ToInt32(countWordsIntoPMWords[i]) - offsetOfNumbericChar;
-                the_end = the_end + Convert.ToInt16(countWordsIntoPMWords[i]) - offsetOfNumbericChar;
-                arr_r[i] = the_end;
-            }
-            //Console.WriteLine("{0} {1} {2}",arr_r[0],arr_r[1],arr_r[2]);
-            curr_elem_arr_r = 0;
-            while (curr_print_elem < the_end)
-            {
-                if (arr_r[curr_elem_arr_r] == curr_print_elem)
-                {
-                    curr_elem_arr_r++;
-            //        Console.WriteLine();
-                    Outf.WriteLine();
-                }
-            //    Console.Write("{0} ",result_words[curr_print_elem]);
-                Outf.Write("{0} ",result_words[curr_print_elem]);
-                curr_print_elem++;
-            }
-            Outf.Close();
-            if (fileOpenAfterWrite)
-            {
+                Outf.Write(ResultIntoString(result_words));
                 OpenNotepadResults();
-            }    
+            }
         }
         
         public void OpenNotepadResults()
         {
-            Process.Start("notepad.exe", otputFullFileName);
+            if (fileOpenAfterWrite) Process.Start("notepad.exe", otputFullFileName);
         }
     }
-
 }

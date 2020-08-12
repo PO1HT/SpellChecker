@@ -12,7 +12,22 @@ namespace TwoEdits
         public static string[] Arr_Result;
         public static string[] Arr_InputDictWords;
         public static string[] Arr_inputPossibleMisspletWords;
+        public static bool caseSensitivity = true;
+
+        public static void SetCaseSensitivity(bool flag)
+        {
+            caseSensitivity = flag;
+        }
+
+        public static void SetArr_InputDictWords(string[] source)
+        {
+            Arr_InputDictWords = source;
+        }
                 
+        public static void SetArr_inputPossibleMisspletWords(string[] source)
+        {
+            Arr_inputPossibleMisspletWords = source;
+        }
         public static void CreateResults()
         {
             TwoEdits.Prepare.Arr_Result = new string[Arr_inputPossibleMisspletWords.Length];
@@ -34,7 +49,7 @@ namespace TwoEdits
                     {
                         continue;
                     }
-                    if (String.Compare(possibleMisspletWord,dictWord,true)==0) 
+                    if (String.Compare(possibleMisspletWord,dictWord,caseSensitivity)==0) 
                     {
                         srt_compare = 1;
                         result_edits = 0;
@@ -49,6 +64,7 @@ namespace TwoEdits
                         MethodLevenstain.constrainTwoRedactionAdjactive = MethodLevenstain.notAllowConstrainTwoRedactionAdjactive;
                         MethodLevenstain.constrainMaxCountOfRedaction = 2;
                         MethodLevenstain.printOnlyMinOfWithRedaction = !MethodLevenstain.PrintOnlyMinOfWithRedaction;
+                        MethodLevenstain.SetCaseSensitivity(true);
                         MethodLevenstain.CompareTwoStrings();
 
                         if (MethodLevenstain.isResolveFound)    
@@ -92,16 +108,14 @@ namespace TwoEdits
             SpellCheckerIO.SpellCheсker spellCheсker = new SpellCheckerIO.SpellCheсker(args);
             if  (spellCheсker.fileIsLoaded)
             {
-                Prepare.Arr_InputDictWords = spellCheсker.inputDictWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
-                Prepare.Arr_inputPossibleMisspletWords = spellCheсker.inputPossibleMisspletWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries);
+                Prepare.SetArr_InputDictWords(spellCheсker.inputDictWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries));
+                Prepare.SetArr_inputPossibleMisspletWords(spellCheсker.inputPossibleMisspletWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries));
                 Prepare.CreateResults();
-                spellCheсker.fileOpenAfterWrite = false;
+                spellCheсker.SetFileOpenAfterWrite(true); 
                 spellCheсker.WriteResults(TwoEdits.Prepare.Arr_Result);
             }
             else
-            {
-              Console.WriteLine("Input File is does't exist. Please check and fix the filename and try again! See soon");  
-            }
+              throw new Exception("Input File is does't exist. Please check and fix the filename and try again! See soon");
         }
         catch (Exception ex)
             {
