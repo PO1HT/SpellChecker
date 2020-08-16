@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Redaction;
+using RedactionGraph;
 using WorkArgs;
 using SpellCheckerIO;
 
@@ -9,94 +9,123 @@ namespace TwoEdits
 {
     public class Prepare
     {
-        public static string[] Arr_Result;
-        public static string[] Arr_InputDictWords;
-        public static string[] Arr_inputPossibleMisspletWords;
-        public static bool caseSensitivity = true;
+        private string[] Arr_Result;
+        private string[] Arr_InputDictWords;
+        private string[] Arr_InputPossibleMisspletWords;
+        private bool caseSensitivity = true;
 
-        public static void SetCaseSensitivity(bool flag)
+        public string[] GetArrResult()
+        {
+            return Arr_Result;
+        }
+        public Prepare(string sourceDictWords,string sourcePossibleMisspletWords)
+        {
+            SetArr_InputDictWords(sourceDictWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries));
+            SetArr_InputPossibleMisspletWords(sourcePossibleMisspletWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries));
+        }
+        public void SetCaseSensitivity(bool flag)
         {
             caseSensitivity = flag;
         }
 
-        public static void SetArr_InputDictWords(string[] source)
+        public void SetArr_InputDictWords(string[] source)
         {
             Arr_InputDictWords = source;
         }
                 
-        public static void SetArr_inputPossibleMisspletWords(string[] source)
+        public void SetArr_InputPossibleMisspletWords(string[] source)
         {
-            Arr_inputPossibleMisspletWords = source;
+            Arr_InputPossibleMisspletWords = source;
         }
-        public static void CreateResults()
+        private int ind_arr_result = 0;
+        
+        public void CreateResults()
         {
-            TwoEdits.Prepare.Arr_Result = new string[Arr_inputPossibleMisspletWords.Length];
-            TwoEdits.Prepare.PrepareResults(Arr_inputPossibleMisspletWords,Arr_InputDictWords);
+            ind_arr_result = 0;
+            this.Arr_Result = new string[this.Arr_InputPossibleMisspletWords.Length];
+            this.PrepareResults(this.Arr_InputPossibleMisspletWords,this.Arr_InputDictWords);
         }
-        public static void PrepareResults(string[] Arr_inputPossibleMisspletWords, string[] Arr_InputDictWords)
+
+        private bool FindRedactionEditsPossibleMisspleWordIntoDictWord(string possibleMisspletWord, string dictWord)
         {
-            int ind_arr_result = 0;
-            int current_word_print = 0;
-            foreach (string possibleMisspletWord in Arr_inputPossibleMisspletWords)
+            MethodLevenstain.SetPossibleMisspletWord(possibleMisspletWord);
+            MethodLevenstain.SetDictWord(dictWord);
+            MethodLevenstain.NewSeek();
+            MethodLevenstain.ConstrainTwoRedactionAdjactiveOn();
+            MethodLevenstain.constrainMaxCountOfRedaction = 2;
+            MethodLevenstain.PrintOnlyMinOfWithRedactionOn(); 
+            MethodLevenstain.SetCaseSensitivity(true);
+            MethodLevenstain.CompareTwoStrings();
+            return MethodLevenstain.isWordFounded();
+        }
+        enum resultFound : int
             {
-                int srt_compare = 0;
+                notFoundEdits = -1,
+                foundEdits = 0,
+                notFoundAnyWords = 0,
+                notStringMatch = 0,
+                stringMatch = 1
+            }
+            
+        public void PrepareResults(string[] arr_InputPossibleMisspletWords, string[] arr_InputDictWords)
+        {
+            int current_word_print = 0;
+            foreach (string possibleMisspletWord in arr_InputPossibleMisspletWords)
+            {
                 string result_words = "";
-                int result_edits = -1;
-                srt_compare = 0;
-                foreach (string dictWord in Arr_InputDictWords)
+                int minCountOfEdits = Int16.MaxValue;//(int)resultFound.notFoundEdits;
+                foreach (string dictWord in arr_InputDictWords)
                 {
-                    if (srt_compare == 1)
-                    {
-                        continue;
-                    }
                     if (String.Compare(possibleMisspletWord,dictWord,caseSensitivity)==0) 
                     {
-                        srt_compare = 1;
-                        result_edits = 0;
                         result_words = dictWord;
+                        break;
                     }
+                    
                     int levinstainDistance = 2;
                     if (((possibleMisspletWord.Length - possibleMisspletWord.Length)<=levinstainDistance) & ((possibleMisspletWord.Length - possibleMisspletWord.Length)>=-levinstainDistance)) 
                     { 
-                        MethodLevenstain.possibleMisspletWord = possibleMisspletWord;
-                        MethodLevenstain.dictWord = dictWord;
-                        MethodLevenstain.isResolveFound = false;
-                        MethodLevenstain.constrainTwoRedactionAdjactive = MethodLevenstain.notAllowConstrainTwoRedactionAdjactive;
-                        MethodLevenstain.constrainMaxCountOfRedaction = 2;
-                        MethodLevenstain.printOnlyMinOfWithRedaction = !MethodLevenstain.PrintOnlyMinOfWithRedaction;
-                        MethodLevenstain.SetCaseSensitivity(true);
-                        MethodLevenstain.CompareTwoStrings();
-
-                        if (MethodLevenstain.isResolveFound)    
+                        if (FindRedactionEditsPossibleMisspleWordIntoDictWord(possibleMisspletWord,dictWord))    
                         {
-                            if (result_edits == -1)
+                            if (result_words.Length == 0)
                             {
-                                result_edits = MethodLevenstain.minOfWithRedaction;
+                                minCountOfEdits = MethodLevenstain.minOfWithRedaction;
                                 result_words = dictWord;
                             }
                             else
-                                if (result_edits > MethodLevenstain.minOfWithRedaction)
+                                if (minCountOfEdits > MethodLevenstain.minOfWithRedaction)
                                 {
-                                    result_edits = MethodLevenstain.minOfWithRedaction;
+                                    minCountOfEdits = MethodLevenstain.minOfWithRedaction;
                                     result_words = dictWord;
                                 }
                                 else
-                                    if (result_edits == MethodLevenstain.minOfWithRedaction)
+                                    if (minCountOfEdits == MethodLevenstain.minOfWithRedaction)
                                     {
                                         result_words = result_words + " " + dictWord;
                                     }
                         }        
                     }   
                 }
-                if (result_edits ==  -1)
+                
+                if (result_words.Length == 0)
                     result_words = @"{"+possibleMisspletWord+"?}";
-                if (result_words.IndexOf(" ") > 0)
+                
+                if (result_words.IndexOf(" ") > (int)resultFound.notFoundAnyWords)
                     result_words = @"{"+result_words+"}";
+                
                 current_word_print++;
-                Arr_Result[ind_arr_result] = result_words;
-                ind_arr_result++;
+                
+                AddWordIntoResult(result_words);
+                
             }
         }
+
+        private void AddWordIntoResult(string words)
+        {
+            Arr_Result[ind_arr_result] = words;
+            ind_arr_result++;
+        }
+
     }
     
     class Program
@@ -106,13 +135,16 @@ namespace TwoEdits
         try
         {
             SpellCheckerIO.SpellCheсker spellCheсker = new SpellCheckerIO.SpellCheсker(args);
-            if  (spellCheсker.fileIsLoaded)
+            if  (spellCheсker.FileIsLoaded())
             {
-                Prepare.SetArr_InputDictWords(spellCheсker.inputDictWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries));
-                Prepare.SetArr_inputPossibleMisspletWords(spellCheсker.inputPossibleMisspletWords.Split(new[] {' '},StringSplitOptions.RemoveEmptyEntries));
-                Prepare.CreateResults();
-                spellCheсker.SetFileOpenAfterWrite(true); 
-                spellCheсker.WriteResults(TwoEdits.Prepare.Arr_Result);
+                Prepare FinderRedactionWord = new Prepare(
+                                                            spellCheсker.GetInputDictWords(),
+                                                            spellCheсker.GetInputPossibleMisspletWords()
+                                                         );
+                FinderRedactionWord.CreateResults();
+                
+                spellCheсker.FileOpenAfterWriteOn(); 
+                spellCheсker.WriteResults(FinderRedactionWord.GetArrResult());
             }
             else
               throw new Exception("Input File is does't exist. Please check and fix the filename and try again! See soon");

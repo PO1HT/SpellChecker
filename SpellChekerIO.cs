@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Redaction;
 using WorkArgs;
 
 using System.Diagnostics;
@@ -10,21 +9,38 @@ namespace SpellCheckerIO
 {
     class SpellCheсker
     {
-        public string inputFullFileName;
-        public string otputFullFileName;
-        public string inputDictWords = "";
-        public string inputPossibleMisspletWords = ""; //Possible Misspelt Words;
-        public string countWordsIntoDictWords = ""; 
-        public string countWordsIntoPMWords = ""; 
-        public string countWordsIntoEachLines;
-        public bool fileIsLoaded = false;
-        public bool fileOpenAfterWrite = false;
+        private string inputFullFileName;
+        private string otputFullFileName;
+        private string inputDictWords = "";
+        private string inputPossibleMisspletWords = ""; 
+        private string countWordsIntoDictWords = ""; 
+        private string countWordsIntoPMWords = ""; 
+        private string countWordsIntoEachLines;
+        private bool fileIsLoaded = false;
+        private bool fileOpenAfterWrite = false;
 
-        public void SetFileOpenAfterWrite(bool flag)
+        public bool FileIsLoaded()
         {
-            fileOpenAfterWrite = flag;
+            return fileIsLoaded;
+        }
+        public string GetInputDictWords()
+        {
+            return inputDictWords;
+        }
+
+        public string GetInputPossibleMisspletWords()
+        {
+            return inputPossibleMisspletWords;
+        }
+        public void FileOpenAfterWriteOn()
+        {
+            fileOpenAfterWrite = true;
         }
         
+        public void SetFileOpenAfterWriteOff()
+        {
+            fileOpenAfterWrite = false;
+        }
         public SpellCheсker(string[] args)
         {
             WorkWithArgs workWithArgs = new WorkWithArgs();
@@ -146,11 +162,11 @@ namespace SpellCheckerIO
         {
             try
                 {
-                using (StreamReader inputFile = new StreamReader(@inputFullFileName))
+                    using (StreamReader inputFile = new StreamReader(@inputFullFileName))
                     {
                         ReadInputFile(inputFile);
                     }
-                SetFileIsLoadedSuccess();
+                    SetFileIsLoadedSuccess();
                 }
             catch (System.Exception e)
             {
